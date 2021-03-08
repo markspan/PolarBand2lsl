@@ -25,4 +25,4 @@ a sample script for peak detection is also provided. Based on [https://nl.mathwo
 
 
 # Stolen from:
-https://towardsdatascience.com/creating-a-data-stream-with-polar-device-a5c93c9ccc59
+(https://towardsdatascience.com/creating-a-data-stream-with-polar-device-a5c93c9ccc59](Pareeknikhil)
