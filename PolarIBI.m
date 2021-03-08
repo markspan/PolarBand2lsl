@@ -8,7 +8,7 @@ figure(1)
 f_y = polyval(p,(1:numel(ecg))',[],mu);
 
 ECG_data = ecg - f_y;        % Detrend data
-ECG_data = ecg;
+%ECG_data = ecg;              % or keep it RAW
 %% R-Top Trigger
 plot(tm,ECG_data)
 grid on
