@@ -30,6 +30,7 @@ You can record the stream with [Labrecorder](https://github.com/labstreaminglaye
 
 A sample script for peak detection is also provided. Based on [Matlab Documentation](https://nl.mathworks.com/help/wavelet/ug/r-wave-detection-in-the-ecg.html]).
 This script uses the xdf import module of LabStreamingLayer (https://github.com/xdf-modules/xdf-Matlab), and the 'findpeaks' function from the MATLAB Signal Processing Toolbox
+
 ![Screenshot 2021-02-25 115853](https://user-images.githubusercontent.com/4105112/110318793-40345100-800e-11eb-9f86-872d7848a1ac.png)
 # Stolen from:
 [Pareeknikhil](https://towardsdatascience.com/creating-a-data-stream-with-polar-device-a5c93c9ccc59)
