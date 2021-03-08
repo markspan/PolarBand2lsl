@@ -1,5 +1,5 @@
 # PolarBand2lsl
- Send PolarBand H10 Data to an LSL
+Send PolarBand H10 Data to an [LSL](https://github.com/sccn/labstreaminglayer)
 
 # Manual:
 Install [Python](https://www.anaconda.com/) if you haven't yet
@@ -10,6 +10,10 @@ then open an anaconda prompt, and do a
 pip install pylsl --user
 pip install bleak --user
 ```
+
+to install [pylsl](https://pypi.org/project/pylsl/) and [bleak](https://bleak.readthedocs.io/en/latest/) into python.
+
+as **bleak** is used for the bluetooth LE communication, this *should* work on PC, MAC and Linux. 
 
 and then change to the dir with this code.
 Change the MAC address in the code to the MAC address of your band first.
