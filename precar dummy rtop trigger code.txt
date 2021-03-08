@@ -1,0 +1,149 @@
+Private Sub trigger_data(start_sample As Long, end_sample As Long)
+
+
+Dim	RT_flag As Boolean, 
+	prev_value As Long,
+	last_value As Long
+Dim 	InhCnt As Integer, 
+	ActLevel As Single, 
+	t As Double, 	
+	sum As Long
+Dim 	buf() As Integer, 
+	istart As Integer, 
+	istop As Integer
+Dim 	i As Integer, 
+	act_time As Double, 
+	rc As Double, 
+	ti As Long
+Dim 	startblk As Long, 
+	blknr As Long, 	
+	endblk As Long
+Dim 	ECGupsidedown As Boolean, 
+	gadoor As Boolean
+
+nSaved = -1
+ReDim buf(NSPB - 1)
+ReDim SavePeaks(0)
+
+TrigLevel = CInt(cmbTrig.Text) 'To prevend missing last changes in the combobox
+Inhibition = CInt(cmbInh.Text)
+
+RT_flag = False
+
+startblk = start_sample \ NSPB
+istart = start_sample - NSPB * startblk
+
+If istart = NSPB - 1 Then istart = NSPB - 2
+
+endblk = end_sample \ NSPB
+
+If startblk = endblk Then
+    istop = end_sample - endblk * NSPB
+Else
+    istop = NSPB - 1
+End If
+
+act_time = (start_sample - 1) / fsample + StartTime
+Seek #IO_nr, pSampleStart + startblk * Nchans * 2 * NSPB
+Get #IO_nr, , DataBuf
+
+If TrigLevel < 0 Then
+    TrigLevel = TrigLevel * -1
+    ECGupsidedown = True
+Else
+    ECGupsidedown = False
+End If
+
+If ECGupsidedown Then
+    For i = 0 To NSPB - 1
+        DataBuf(i, ECGChan) = DataBuf(i, ECGChan) * -1
+    Next i
+End If
+
+prev_value = DataBuf(istart, ECGChan)
+last_value = DataBuf(istart + 1, ECGChan)
+
+For blknr = startblk To endblk
+    sum = 0
+
+    For i = istart To istop
+        sum = DataBuf(i, ECGChan) + sum
+    Next i
+
+    ActLevel = sum / (istop - istart + 1) + TrigLevel
+
+    For i = istart To istop
+        act_time = Int(act_time * fsample + 1.5) / fsample
+
+        If RT_flag Then
+            If DataBuf(i, ECGChan) <= last_value Then
+                rc = maxI(Abs(prev_value - last_value), Abs(DataBuf(i, ECGChan) - last_value))
+                t = act_time - 1 / fsample
+
+                If rc <> 0 Then t = t + (DataBuf(i, ECGChan) - prev_value) / fsample / 2 / Abs(rc)
+
+                Npeaks = Npeaks + 1
+                ReDim Preserve Rpeaks(Npeaks)
+
+                ti = Npeaks
+
+                If Npeaks > 0 Then
+
+                    gadoor = (Rpeaks(ti - 1) > t)
+
+                    While gadoor
+
+                        Rpeaks(ti) = Rpeaks(ti - 1)
+                        ti = ti - 1
+
+                        If ti = 0 Then
+                            gadoor = False
+                        Else
+                            gadoor = (Rpeaks(ti - 1) > t)
+                        End If
+
+                    Wend
+
+                    Rpeaks(ti) = t
+                Else
+                    Rpeaks(ti) = t
+                End If
+
+                nSaved = nSaved + 1
+                ReDim Preserve SavePeaks(nSaved)
+                SavePeaks(nSaved) = t
+
+                RT_flag = False
+                InhCnt = CInt(Inhibition * 0.001 * fsample)
+            End If
+        Else
+            If InhCnt > 0 Then
+                InhCnt = InhCnt - 1
+            Else
+                If DataBuf(i, ECGChan) > ActLevel Then RT_flag = True
+            End If
+        End If
+        prev_value = last_value
+        last_value = DataBuf(i, ECGChan)
+    Next i
+
+    Get #IO_nr, , DataBuf
+    istart = 0
+
+    If blknr = endblk - 1 Then
+        istop = end_sample - endblk * NSPB
+    Else
+        istop = NSPB - 1
+    End If
+
+    If ECGupsidedown Then
+        For i = 0 To NSPB - 1
+            DataBuf(i, ECGChan) = DataBuf(i, ECGChan) * -1
+        Next i
+    End If
+
+Next blknr
+
+If ECGupsidedown Then TrigLevel = TrigLevel * -1 'Return to original value
+
+End Sub
