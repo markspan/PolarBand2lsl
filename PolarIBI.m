@@ -1,5 +1,5 @@
 %% INPUT DATA:
-data = load_xdf('sub-P001_ses-S001_task-Default_run-001_eeg_old7.xdf');
+data = load_xdf('data.xdf');
 tm = data{1}.time_stamps-data{1}.time_stamps(1);
 ecg = data{1}.time_series';
 figure(1)
