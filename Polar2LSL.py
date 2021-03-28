@@ -5,6 +5,7 @@ import os
 import signal
 import sys
 import time
+import sys, getopt
 
 import pandas as pd
 from bleak import BleakClient
@@ -17,8 +18,6 @@ the device acting as an API """
 
 uuid16_dict = {v: k for k, v in uuid16_dict.items()}
 
-## This is the device MAC ID, please update with your device ID
-ADDRESS = "C7:4C:DA:51:37:51"
 
 ## UUID for model number ##
 MODEL_NBR_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
@@ -55,20 +54,21 @@ startTime = -1
 ecg_session_data = []
 
 exitPressed = False
+def StartStream(STREAMNAME):
+    
+    info = StreamInfo(STREAMNAME, 'ECG', 1,ECG_SAMPLING_FREQ, 'float32', 'myuid2424')
 
-info = StreamInfo('PolarBand', 'ECG', 1,ECG_SAMPLING_FREQ, 'float32', 'myuid2424')
-
-info.desc().append_child_value("manufacturer", "Polar")
-channels = info.desc().append_child("channels")
-for c in ["ECG"]:
-    channels.append_child("channel")\
-        .append_child_value("name", c)\
-        .append_child_value("unit", "microvolts")\
-        .append_child_value("type", "ECG")
-
-# next make an outlet; we set the transmission chunk size to 74 samples and
-# the outgoing buffer size to 360 seconds (max.)
-outlet = StreamOutlet(info, 74, 360)
+    info.desc().append_child_value("manufacturer", "Polar")
+    channels = info.desc().append_child("channels")
+    for c in ["ECG"]:
+        channels.append_child("channel")\
+            .append_child_value("name", c)\
+            .append_child_value("unit", "microvolts")\
+            .append_child_value("type", "ECG")
+    
+    # next make an outlet; we set the transmission chunk size to 74 samples and
+    # the outgoing buffer size to 360 seconds (max.)
+    outlet = StreamOutlet(info, 74, 360)
 
 
 
@@ -153,7 +153,8 @@ async def run(client, debug=False):
     sys.exit(0)
 
 
-async def main():
+async def main(argv):
+
     try:
         async with BleakClient(ADDRESS) as client:
             signal.signal(signal.SIGINT, keyboardInterrupt_handler)
@@ -167,8 +168,29 @@ async def main():
 
 
 if __name__ == "__main__":
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"ha:s:",["ADDRESS=","STREAMNAME="])
+    except getopt.GetoptError:
+        print ('Polar2LSL.py -a <MACADDRESS> -s <STREAMNAME>', flush=True)
+        sys.exit(2)
+    # Defaults:
+    STREAMNAME = 'PolarBand'
+    ADDRESS = "C7:4C:DA:51:37:51"
+    
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('Polar2LSL.py -a <MACADDRESS> -s <STREAMNAME>', flush=True)
+            sys.exit()
+        elif opt in ("-a", "--ADDRESS"):
+            ADDRESS = arg
+        elif opt in ("-s", "--STREAMNAME"):
+            STREAMNAME = arg
+            
+    print ('MACADDRESS is ', ADDRESS, flush=True)
+    print ('STREAMNAME is ', STREAMNAME, flush=True)
+
+    StartStream(STREAMNAME)
     os.environ["PYTHONASYNCIODEBUG"] = str(1)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
-
+    loop.run_until_complete(main(sys.argv[1:]))
