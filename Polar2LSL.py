@@ -1,13 +1,11 @@
-from pylsl import StreamInfo, StreamOutlet, local_clock
+from pylsl import StreamInfo, StreamOutlet
 import asyncio
-import math
+import aioconsole 
 import os
 import signal
 import sys
-import time
-import sys, getopt
+import getopt
 
-import pandas as pd
 from bleak import BleakClient
 from bleak.uuids import uuid16_dict
 
@@ -17,7 +15,6 @@ Fitness/Heart Rate device manufacturer follow (Polar H10 in this case) to obtain
 the device acting as an API """
 
 uuid16_dict = {v: k for k, v in uuid16_dict.items()}
-
 
 ## UUID for model number ##
 MODEL_NBR_UUID = "0000{0:x}-0000-1000-8000-00805f9b34fb".format(
@@ -50,12 +47,12 @@ ECG_WRITE = bytearray([0x02, 0x00, 0x00, 0x01, 0x82, 0x00, 0x01, 0x01, 0x0E, 0x0
 ## For Polar H10  sampling frequency ##
 ECG_SAMPLING_FREQ = 130
 
-startTime = -1
-ecg_session_data = []
+info = []
+outlet = []
+ADDRESS = []
 
-exitPressed = False
 def StartStream(STREAMNAME):
-    
+    global info, outlet
     info = StreamInfo(STREAMNAME, 'ECG', 1,ECG_SAMPLING_FREQ, 'float32', 'myuid2424')
 
     info.desc().append_child_value("manufacturer", "Polar")
@@ -72,31 +69,17 @@ def StartStream(STREAMNAME):
 
 
 
-## Keyboard Interrupt Handler
-def keyboardInterrupt_handler(signum, frame):
-    print("  key board interrupt received...")
-    print("----------------Recording stopped------------------------")
-    print(signum,frame)
-
-
 ## Bit conversion of the Hexadecimal stream
 def data_conv(sender, data: bytearray):
-    global startTime, outlet
+    global outlet
     if data[0] == 0x00:
         print(".", end = '', flush=True)
-        #if startTime == -1:
-        #    startTime = convert_to_unsigned_long(data, 1, 8) / 1000000.0
-        #timeStamp = (convert_to_unsigned_long(data, 1, 8) / 1000000.0) - startTime
         step = 3
         samples = data[10:]
         offset = 0
         while offset < len(samples):
-            #odata =[0,0]
             ecg = convert_array_to_signed_int(samples, offset, step)
             offset += step
-            #odata[0] = ecg
-            #odata[1] = timeStamp
-            #ecg_session_data.extend([odata])
             outlet.push_sample([ecg])
             
 
@@ -115,49 +98,41 @@ def convert_to_unsigned_long(data, offset, length):
 ## ASynchronous task to start the data stream for ECG ##
 async def run(client, debug=False):
 
-    ## Writing characteristic description to control point for request of UUID (defined above) ##
+    print("---------Looking for Device------------ ", flush=True)
 
     await client.is_connected()
-    print("---------Device connected--------------")
+    print("---------Device connected--------------", flush=True)
 
     model_number = await client.read_gatt_char(MODEL_NBR_UUID)
-    print("Model Number: {0}".format("".join(map(chr, model_number))))
+    print("Model Number: {0}".format("".join(map(chr, model_number))), flush=True)
 
     manufacturer_name = await client.read_gatt_char(MANUFACTURER_NAME_UUID)
-    print("Manufacturer Name: {0}".format("".join(map(chr, manufacturer_name))))
+    print("Manufacturer Name: {0}".format("".join(map(chr, manufacturer_name))), flush=True)
 
     battery_level = await client.read_gatt_char(BATTERY_LEVEL_UUID)
-    print("Battery Level: {0}%".format(int(battery_level[0])))
+    print("Battery Level: {0}%".format(int(battery_level[0])), flush=True)
 
-    att_read = await client.read_gatt_char(PMD_CONTROL)
+    
+    await client.read_gatt_char(PMD_CONTROL)
 
     await client.write_gatt_char(PMD_CONTROL, ECG_WRITE)
 
     ## ECG stream started
     await client.start_notify(PMD_DATA, data_conv)
 
-    print("Collecting ECG data...")
+    print("Collecting ECG data...", flush=True)
 
-    ## Collecting ECG data for 1 minute/ 60 seconds
-    await asyncio.sleep(40000)
-
-    ## Writing the collected data into a  CSV file on local system ##
-    #df_ecg = pd.DataFrame(ecg_session_data)
-    #df_ecg.to_csv("df_ecg_polar.csv")
-
-    ## Stop the stream once data is collected
+    await aioconsole.ainput('Running: Press a key to quit')
     await client.stop_notify(PMD_DATA)
-    print("Stopping ECG data...")
-    print("[CLOSED] application closed.")
-
+    print("Stopping ECG data...", flush=True)
+    print("[CLOSED] application closed.", flush=True)
     sys.exit(0)
 
 
 async def main(argv):
-
+    global ADDRESS
     try:
         async with BleakClient(ADDRESS) as client:
-            signal.signal(signal.SIGINT, keyboardInterrupt_handler)
             tasks = [
                 asyncio.ensure_future(run(client, True)),
             ]
@@ -176,6 +151,7 @@ if __name__ == "__main__":
     # Defaults:
     STREAMNAME = 'PolarBand'
     ADDRESS = "C7:4C:DA:51:37:51"
+    ADDRESS = "C9:09:F1:4C:AA:4D"
     
     for opt, arg in opts:
         if opt == '-h':
