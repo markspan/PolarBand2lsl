@@ -47,12 +47,11 @@ ECG_WRITE = bytearray([0x02, 0x00, 0x00, 0x01, 0x82, 0x00, 0x01, 0x01, 0x0E, 0x0
 ## For Polar H10  sampling frequency ##
 ECG_SAMPLING_FREQ = 130
 
-info = []
-outlet = []
-ADDRESS = []
+OUTLET = []
+
 
 def StartStream(STREAMNAME):
-    global info, outlet
+
     info = StreamInfo(STREAMNAME, 'ECG', 1,ECG_SAMPLING_FREQ, 'float32', 'myuid2424')
 
     info.desc().append_child_value("manufacturer", "Polar")
@@ -65,13 +64,13 @@ def StartStream(STREAMNAME):
     
     # next make an outlet; we set the transmission chunk size to 74 samples and
     # the outgoing buffer size to 360 seconds (max.)
-    outlet = StreamOutlet(info, 74, 360)
+    return StreamOutlet(info, 74, 360)
 
 
 
 ## Bit conversion of the Hexadecimal stream
 def data_conv(sender, data: bytearray):
-    global outlet
+    global OUTLET
     if data[0] == 0x00:
         print(".", end = '', flush=True)
         step = 3
@@ -80,7 +79,7 @@ def data_conv(sender, data: bytearray):
         while offset < len(samples):
             ecg = convert_array_to_signed_int(samples, offset, step)
             offset += step
-            outlet.push_sample([ecg])
+            OUTLET.push_sample([ecg])
             
 
 def convert_array_to_signed_int(data, offset, length):
@@ -129,8 +128,7 @@ async def run(client, debug=False):
     sys.exit(0)
 
 
-async def main(argv):
-    global ADDRESS
+async def main(ADDRESS, OUTLET):
     try:
         async with BleakClient(ADDRESS) as client:
             tasks = [
@@ -165,8 +163,9 @@ if __name__ == "__main__":
     print ('MACADDRESS is ', ADDRESS, flush=True)
     print ('STREAMNAME is ', STREAMNAME, flush=True)
 
-    StartStream(STREAMNAME)
+    OUTLET = StartStream(STREAMNAME)
+    
     os.environ["PYTHONASYNCIODEBUG"] = str(1)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(main(sys.argv[1:]))
+    loop.run_until_complete(main(ADDRESS, OUTLET))
