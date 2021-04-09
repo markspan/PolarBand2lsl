@@ -1,6 +1,6 @@
 %% INPUT DATA:
 data = load_xdf('data.xdf');
-tm = data{1}.time_stamps-data{1}.time_stamps(1);
+tmOrig = data{1}.time_stamps-data{1}.time_stamps(1);
 ecg = data{1}.time_series';
 figure(1)
 %% DETREND
@@ -8,8 +8,13 @@ figure(1)
 f_y = polyval(p,(1:numel(ecg))',[],mu);
 
 ECG_data = ecg - f_y;        % Detrend data
+plot(tmOrig,ECG_data, 'k-')
+tm = tmOrig(1):.001:tmOrig(end);
+% cubic spline interpolationj
+ECG_data = spline(tmOrig,ECG_data,tm);
 %ECG_data = ecg;              % or keep it RAW
 %% R-Top Trigger
+hold on
 plot(tm,ECG_data)
 grid on
 title('Detrended ECG Signal')

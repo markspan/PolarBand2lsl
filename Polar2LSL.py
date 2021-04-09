@@ -70,7 +70,7 @@ def StartStream(STREAMNAME):
 
 ## Bit conversion of the Hexadecimal stream
 def data_conv(sender, data: bytearray):
-    global OUTLET
+    #global OUTLET
     if data[0] == 0x00:
         print(".", end = '', flush=True)
         step = 3
