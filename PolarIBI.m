@@ -1,7 +1,15 @@
 %% INPUT DATA:
-data = load_xdf('data.xdf');
+data = load_xdf('longerdata.xdf');
 tmOrig = data{1}.time_stamps-data{1}.time_stamps(1);
 ecg = data{1}.time_series';
+
+% part:
+ecg = ecg(tmOrig>1000 & tmOrig<1250);
+tmOrig = tmOrig(tmOrig>1000 & tmOrig<1250);
+
+figure(100);
+[RoonIbi,~,~] = getIBI(ecg,tmOrig);
+
 figure(1)
 %% DETREND
 [p,s,mu] = polyfit((1:numel(ecg))',ecg,6);
@@ -26,6 +34,9 @@ ylabel('Voltage(mV)')
 %% R-Top Trigger
 [~,locs_Rwave] = findpeaks(ECG_data,'MinPeakHeight',400,...
                                     'MinPeakDistance',50);
+disp(['found '  int2str(length(locs_Rwave))  ' r-tops'])
+
+
 
 %%  PLOT the Triggered R-tops
 hold on
@@ -49,3 +60,5 @@ histogram(ibi,40)
 %% plot the IBI values over time
 figure(3)
 plot(ibi)
+figure(4)
+plot(ibi-RoonIbi)
