@@ -1,15 +1,17 @@
-function [ibis, t, par] = getIBI(ecgData, ecgTimestamps, varargin)
+function [ibis, par, t] = getIBI(ecgData, ecgTimestamps, varargin)
 %  GETIBI Detects the IBI values from a ECG trace. Using interpolation to get ms. precision
 % 
 % Algorithm developed by A.M. van Roon for PRECAR (CARSPAN preprocessing).
 % 
 % Matlab version M.M.Span (2021)
+
 %%  default values:
-par.fSample = 130;
-par.MinPeakHeight = 310;
-par.MinPeakDistance = 50;
+par.fSample = -1;
+par.MinPeakHeight = median(ecgData)+(2*std(ecgData));
+par.MinPeakDistance = 350; %ms!
 par.deTrend = true;
 par.Plot = true;
+
 %% Parse the name - value pairs found in varargin
 %------------------------------------------------------------------------------------------
 for arg = 1:2:length(varargin)
@@ -18,7 +20,7 @@ for arg = 1:2:length(varargin)
         % and does it have a value?
         if length(varargin)<=arg
             ME = MException('getIBI:MissingValue', ...
-                'Parameter %s should be followed by a parameter',varargin{arg});
+                'Parameter %s should be followed by a value',varargin{arg});
             throw(ME)
         end
         par.(varargin{arg}) = varargin{arg+1};
@@ -29,13 +31,25 @@ for arg = 1:2:length(varargin)
     end
 end
 %% ------------------------------------------------------------------------------------------
+% if no sampleRate is given, calculatie it from the samples and the
+% timestamps
+if (par.fSample == -1)
+    duration = ecgTimestamps(end)-ecgTimestamps(1);
+    par.fSample = round(1.0/(duration / length(ecgTimestamps)));
+end
+%% convert MinPeakDistance from ms to samples
+par.MinPeakDistance = (par.MinPeakDistance/1000.0)*par.fSample;
+%% ------------------------------------------------------------------------------------------
 % are we asked to detrend the data? Detrend algorithm in this file (below).
 if (par.deTrend)
    ecgData = deTrend(ecgData);
 end
+
+
 %% Then, first find the (approximate) peaks
-[vals,locs] = findpeaks(ecgData,'MinPeakHeight',par.MinPeakHeight,...
+[~,locs] = findpeaks(ecgData,'MinPeakHeight',par.MinPeakHeight,...
     'MinPeakDistance',par.MinPeakDistance);
+vals = ecgData(locs);
 disp(['*found '  int2str(length(vals))  ' r-tops'])
 %% Now the algorithm can start.
 %------------------------------------------------------------------------------------------
@@ -47,10 +61,10 @@ catch ME
     ME = addCause(ME,causeException);
     rethrow(ME);
 end
-t = ecgTimestamps(locs) + correction';
-ibis = round(diff(t),3);
+RTopTime = ecgTimestamps(locs) + correction';
+ibis = round(diff(RTopTime),3);
 if (par.Plot) % Plot algorithm in this file (below)
-    PlotECGWithIBIS(ecgTimestamps,ecgData,locs,t)
+    PlotECGWithIBIS(ecgTimestamps,ecgData,locs,RTopTime)
 end
 end
 %%
@@ -59,11 +73,13 @@ function ecgData = deTrend(ecgData)
     f_y = polyval(p,(1:numel(ecgData))',[],mu);
     ecgData = ecgData - f_y;        % Detrend data
 end
+%%
 function PlotECGWithIBIS(ecgTimestamps,ecgData,locs,rtops)
     %% Plot the ECG trace data
     ibis = round(diff(rtops),3);
     hold on
     plot(ecgTimestamps,ecgData)
+    xlim([ecgTimestamps(1) min(ecgTimestamps(1)+10,ecgTimestamps(end))]);
     grid on
     title('(Detrended) ECG Signal (mV)')
     xlabel('time (sec)')
