@@ -16,17 +16,17 @@ to install [pylsl](https://pypi.org/project/pylsl/), [aioconsole](https://github
 
 as **bleak** is used for the bluetooth LE communication, this *should* work on PC, MAC and Linux. 
 
-and then change to the dir with this code (i.e., Polarband2lsl.py).
-Change the MAC address in the code to the MAC address of your band first. The MAC adress can be found on Windows 10 under Control Panel\Hardware and Sound\Devices and Printers There you should be able to see the polar device, and its properties will show a 'Unique identifier'. This is the MAC adress.
+and then change to the directory where you saved the code (i.e., Polarband2lsl.py).
+Change the MAC address in the code to the MAC address of your band first. The MAC address can be found on Windows 10 under Control Panel\Hardware and Sound\Devices and Printers. There you should be able to see the polar device, and its properties will show a 'Unique identifier' (under 'connected device'). This is the MAC address.
 
-The MAC adress should be put in the code around line 152. You can also mention the MAC adress on the command line by startin the program like this:
+The MAC address should be put in the code around line 152. You can also mention the MAC address on the command line by starting the program like this:
 
 
 ``` 
 python Polar2LSL -a MACADRESS -s STREAMNAME
 ```
 
-to get the stream with the name "STREAMNAME" running using the H10 with MAC adress "MACADRESS". The defaults are used when you start the stream by typing:
+to get the stream with the name "STREAMNAME" running using the H10 with MAC address "MACADRESS". The defaults are used when you start the stream by typing:
 
 ``` 
 python Polar2LSL
