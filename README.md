@@ -9,22 +9,29 @@ then open an anaconda prompt, and do a
 ```
 pip install pylsl --user
 pip install bleak --user
+pip install aioconsole --user
 ```
 
-to install [pylsl](https://pypi.org/project/pylsl/) and [bleak](https://bleak.readthedocs.io/en/latest/) into python.
+to install [pylsl](https://pypi.org/project/pylsl/), [aioconsole](https://github.com/vxgmichel/aioconsole) and [bleak](https://bleak.readthedocs.io/en/latest/) into python.
 
 as **bleak** is used for the bluetooth LE communication, this *should* work on PC, MAC and Linux. 
 
-and then change to the dir with this code.
-Change the MAC address in the code to the MAC address of your band first.
+and then change to the dir with this code (i.e., Polarband2lsl.py).
+Change the MAC address in the code to the MAC address of your band first. The MAC adress can be found on Windows 10 under Control Panel\Hardware and Sound\Devices and Printers There you should be able to see the polar device, and its properties will show a 'Unique identifier'. This is the MAC adress.
 
-do a 
+The MAC adress should be put in the code around line 152. You can also mention the MAC adress on the command line by startin the program like this:
+
+
+``` 
+python Polar2LSL -a MACADRESS -s STREAMNAME
+```
+
+to get the stream with the name "STREAMNAME" running using the H10 with MAC adress "MACADRESS". The defaults are used when you start the stream by typing:
 
 ``` 
 python Polar2LSL
 ```
-
-to get the stream running.
+Defaults are "C9:09:F1:4C:AA:4D" for the MAC adress (my band) ans "Polarband" for the STREAMNAME.
 
 You can record the stream with [Labrecorder](https://github.com/labstreaminglayer/App-LabRecorder/releases)
 
