@@ -148,8 +148,8 @@ if __name__ == "__main__":
         sys.exit(2)
     # Defaults:
     STREAMNAME = 'PolarBand'
-    # ADDRESS = "C7:4C:DA:51:37:51"
-    ADDRESS = "C9:09:F1:4C:AA:4D"
+    ADDRESS = "C7:4C:DA:51:37:51"
+    #ADDRESS = "C9:09:F1:4C:AA:4D"
     
     for opt, arg in opts:
         if opt == '-h':
