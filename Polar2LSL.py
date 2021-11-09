@@ -113,8 +113,10 @@ async def run(client, debug=False):
 
     
     await client.read_gatt_char(PMD_CONTROL)
+    print("Collecting GATT data...", flush=True)
 
     await client.write_gatt_char(PMD_CONTROL, ECG_WRITE)
+    print("Writing GATT data...", flush=True)
 
     ## ECG stream started
     await client.start_notify(PMD_DATA, data_conv)
