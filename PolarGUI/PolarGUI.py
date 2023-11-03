@@ -38,9 +38,9 @@ class BluetoothApp(App):
     # Build the GUI
     busychars = ["o...", ".o..", "..o.", "...o"]
     def build(self):
-        #if sys.platform=="win32":
-        #    import ctypes
-        #    ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
+        if sys.platform=="win32":
+            import ctypes
+            ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
         Window.size = (400, 200)
 
         self.devices_layout = BoxLayout(orientation='vertical')

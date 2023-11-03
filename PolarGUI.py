@@ -1,6 +1,11 @@
-import os
-os.environ["KIVY_NO_CONSOLELOG"] = "1"
-os.environ["BLEAK_LOGGING"] = "0"
+# import os
+# os.environ["KIVY_NO_CONSOLELOG"] = "1"
+# os.environ["BLEAK_LOGGING"] = "0"
+
+# import sys
+# if sys.platform=="win32":
+#     import ctypes
+#     ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
 
 from pylsl import StreamInfo, StreamOutlet
 from kivy.app import App
@@ -16,12 +21,6 @@ import asyncio
 import threading
 import bleak
 
-from bleak.uuids import uuid16_dict
-
-
-# Predefined UUID (Universal Unique Identifier) mapping based on the Heart Rate GATT service protocol
-uuid16_dict = {v: k for k, v in uuid16_dict.items()}
-
 # UUIDs
 PMD_CONTROL = "FB005C81-02E7-F387-1CAD-8ACD2D8DF0C8"
 PMD_DATA = "FB005C82-02E7-F387-1CAD-8ACD2D8DF0C8"
@@ -31,16 +30,13 @@ ECG_WRITE = bytearray([0x02, 0x00, 0x00, 0x01, 0x82,
 
 ECG_SAMPLING_FREQ = 130
 
-bleak_logger = logging.getLogger("bleak")
-bleak_logger.setLevel(10000)
+#bleak_logger = logging.getLogger("bleak")
+#bleak_logger.setLevel(10000)
 
 class BluetoothApp(App):
     # Build the GUI
     busychars = ["o...", ".o..", "..o.", "...o"]
     def build(self):
-        #if sys.platform=="win32":
-        #    import ctypes
-        #    ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
         Window.size = (400, 200)
 
         self.devices_layout = BoxLayout(orientation='vertical')
@@ -122,13 +118,11 @@ class BluetoothApp(App):
             await client.read_gatt_char(PMD_CONTROL)
             await client.write_gatt_char(PMD_CONTROL, ECG_WRITE)
             await client.start_notify(PMD_DATA, self.data_conv)
-            # print("Collecting ECG data...", flush=True)
             for i in range(10000):
                 await asyncio.sleep(1)
 
     def data_conv(self, sender, data: bytearray):
         if data[0] == 0x00:
-            #print(".", end='', flush=True)
             self.update_busy()
             step = 3
             samples = data[10:]
