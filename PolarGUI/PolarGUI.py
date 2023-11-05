@@ -8,7 +8,7 @@ from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-
+from kivy.animation import Animation
 from kivy.uix.scrollview import ScrollView
 from kivy.clock import mainthread
 
@@ -44,9 +44,12 @@ class BluetoothApp(App):
         if sys.platform=="win32":
             import ctypes
             ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
+            
         Window.size = (400, 200)
 
         self.stop_event = asyncio.Event()
+        self.busy_label_animation = None
+
         self.devices_layout = BoxLayout(orientation='vertical')
         self.devices_scrollview = ScrollView()
         self.devices_scrollview.add_widget(self.devices_layout)
@@ -124,10 +127,16 @@ class BluetoothApp(App):
         """
         Updates the busy label in a cyclic manner.
         """
-        self.busyvalue = self.busyvalue+1
-        if self.busyvalue == 4:
-            self.busyvalue = 0
-        self.busyLabel.text = self.busychars[self.busyvalue]	        
+        if self.busy_label_animation:
+            self.busy_label_animation.cancel(self.busyLabel)
+
+        self.busyvalue = (self.busyvalue + 1) % 4
+        self.busyLabel.text = self.busychars[self.busyvalue]	
+        
+        self.busy_label_animation = Animation(color=(0, 0, .4, 1), duration=0.5) + Animation(color=(0, 0, 0, 1), duration=0.5)
+        self.busy_label_animation.start(self.busyLabel)
+
+        
         
     def connect_to_device(self, device_address, name, instance):
         """
