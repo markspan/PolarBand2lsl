@@ -1,4 +1,4 @@
-'''
+"""
 Python (Kivy) based GUI to read data from a Polar H10
 ECG band through bluetooth and stream the 
 raw ECG (sampled at 130 Hz) to a labstreaminglayer 
@@ -7,7 +7,7 @@ The GATT code originated from (the now vanished)
 https://pareeknikhil.github.io/
 
 Author: m.m.span@rug.nl
-'''
+"""
 
 import os
 os.environ["KIVY_NO_CONSOLELOG"] = "1"
@@ -29,7 +29,7 @@ import threading
 import bleak
 import sys
 
-# UUIDs, courtisy N. Pareek
+# UUIDs, courtesy N. Pareek
 PMD_CONTROL = "FB005C81-02E7-F387-1CAD-8ACD2D8DF0C8"
 PMD_DATA = "FB005C82-02E7-F387-1CAD-8ACD2D8DF0C8"
 ECG_WRITE = bytearray([0x02, 0x00, 0x00, 0x01, 0x82,
