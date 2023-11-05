@@ -11,16 +11,12 @@ from kivy.uix.label import Label
 
 from kivy.uix.scrollview import ScrollView
 from kivy.clock import mainthread
+
 import logging 
 import asyncio
 import threading
 import bleak
-
-from bleak.uuids import uuid16_dict
-
-
-# Predefined UUID (Universal Unique Identifier) mapping based on the Heart Rate GATT service protocol
-uuid16_dict = {v: k for k, v in uuid16_dict.items()}
+import sys
 
 # UUIDs
 PMD_CONTROL = "FB005C81-02E7-F387-1CAD-8ACD2D8DF0C8"
@@ -35,14 +31,22 @@ bleak_logger = logging.getLogger("bleak")
 bleak_logger.setLevel(10000)
 
 class BluetoothApp(App):
+    """
+    Kivy application for Bluetooth communication with Polar H10 device.
+    """
     # Build the GUI
     busychars = ["o...", ".o..", "..o.", "...o"]
     def build(self):
+        """
+        Build the Kivy GUI.
+        """
+
         if sys.platform=="win32":
             import ctypes
             ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
         Window.size = (400, 200)
 
+        self.stop_event = asyncio.Event()
         self.devices_layout = BoxLayout(orientation='vertical')
         self.devices_scrollview = ScrollView()
         self.devices_scrollview.add_widget(self.devices_layout)
@@ -61,19 +65,28 @@ class BluetoothApp(App):
         return self.root_layout
 
     def scan_for_devices(self, instance):
-        # callback for the scanner: clean the interface
+        """
+        Callback for the device scanner: cleans the interface and starts scanning.
+        """
         self.scan_button.disabled = True
         self.devices_layout.clear_widgets()
         threading.Thread(target=self.scan).start()
 
     def scan(self):
+        """
+        Scans for devices and adds Polar devices to the interface.
+        """
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.async_scan())
         self.scan_button.disabled = False
 
     async def async_scan(self):
-        # scan devices and add the Polars to the interface
+        """
+        Asynchronously scans for devices and adds Polar devices to the interface.
+        """
+
         try:
             devices = await bleak.BleakScanner.discover(
                 return_adv=True, cb=dict(use_bdaddr=False), scanning_mode='active'
@@ -87,6 +100,10 @@ class BluetoothApp(App):
 
     @mainthread
     def add_device_button(self, d, a):
+        """
+        Adds a device button to the interface.
+        """
+
         device_button = Button(text=d.name, size_hint=(1, 0.2))
         device_button.bind(on_press=lambda instance, addr=d.address,
                            nm=d.name: self.connect_to_device(addr, nm, instance))
@@ -94,18 +111,30 @@ class BluetoothApp(App):
 
     @mainthread
     def add_busy_label(self):
+        """
+        Adds a busy label to the interface.
+        """
+
         self.busyLabel = Label(text = "", valign = 'middle')
         self.devices_layout.add_widget(self.busyLabel )
         self.busyvalue = 0;
     
     @mainthread
     def update_busy(self):
+        """
+        Updates the busy label in a cyclic manner.
+        """
         self.busyvalue = self.busyvalue+1
         if self.busyvalue == 4:
             self.busyvalue = 0
         self.busyLabel.text = self.busychars[self.busyvalue]	        
         
     def connect_to_device(self, device_address, name, instance):
+        """
+        Callback for the individual Polar device buttons.
+        Initiates the connection to the selected device.
+        """
+
         # callback for the individual Polar buttons.
         self.OUTLET = self.start_stream(name)
         self.busyLabel.text = "Wait... (Upto a minute...)"
@@ -113,20 +142,33 @@ class BluetoothApp(App):
         threading.Thread(target=self.connect, args=(device_address,)).start()
 
     def connect(self, address):
+        """
+        Connects to the device and starts data streaming.
+        """
+
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.loop.run_until_complete(self.async_connect(address))
 
     async def async_connect(self, address):
-        async with bleak.BleakClient(address) as client:
-            await client.read_gatt_char(PMD_CONTROL)
-            await client.write_gatt_char(PMD_CONTROL, ECG_WRITE)
-            await client.start_notify(PMD_DATA, self.data_conv)
-            # print("Collecting ECG data...", flush=True)
-            for i in range(10000):
-                await asyncio.sleep(1)
+        """
+        Asynchronously connects to the device and starts data streaming.
+        """
 
+        try:
+            async with bleak.BleakClient(address) as client:
+                await client.read_gatt_char(PMD_CONTROL)
+                await client.write_gatt_char(PMD_CONTROL, ECG_WRITE)
+                await client.start_notify(PMD_DATA, self.data_conv)
+                await asyncio.wait_for(self.stop_event.wait(), timeout=None)
+                await client.stop_notify(PMD_DATA)
+        except asyncio.TimeoutError:
+            pass  # Handle timeout if needed
+            
     def data_conv(self, sender, data: bytearray):
+        """
+        Converts received data and pushes it to the LSL stream outlet.
+        """
         if data[0] == 0x00:
             #print(".", end='', flush=True)
             self.update_busy()
@@ -139,13 +181,23 @@ class BluetoothApp(App):
                 self.OUTLET.push_sample([ecg])
 
     def convert_array_to_signed_int(self, data, offset, length):
+        """
+        Converts a byte array to a signed integer.
+        """
         return int.from_bytes(bytearray(data[offset: offset + length]), byteorder="little", signed=True)
 
     def stop_scanning(self, instance):
+        """
+        Stops the scanningdata aquisition and the application.
+        """
+        self.stop_event.set()
         self.loop.stop()
         App.get_running_app().stop()
 
     def start_stream(self, stream_name):
+        """
+        Starts an LSL stream.
+        """
         info = StreamInfo(stream_name, 'ECG', 1,
                           ECG_SAMPLING_FREQ, 'float32', 'myuid2424')
         info.desc().append_child_value("manufacturer", "Polar")
