@@ -7,6 +7,7 @@ The GATT code originated from (the now vanished)
 https://pareeknikhil.github.io/
 
 Author: m.m.span@rug.nl
+https://github.com/markspan/PolarBand2lsl/
 """
 
 import os
