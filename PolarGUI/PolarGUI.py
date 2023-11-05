@@ -1,3 +1,14 @@
+'''
+Python (Kivy) based GUI to read data from a Polar H10
+ECG band through bluetooth and stream the 
+raw ECG (sampled at 130 Hz) to a labstreaminglayer 
+https://github.com/sccn/labstreaminglayer stream.
+The GATT code originated from (the now vanished) 
+https://pareeknikhil.github.io/
+
+Author: m.m.span@rug.nl
+'''
+
 import os
 os.environ["KIVY_NO_CONSOLELOG"] = "1"
 os.environ["BLEAK_LOGGING"] = "0"
@@ -18,7 +29,7 @@ import threading
 import bleak
 import sys
 
-# UUIDs
+# UUIDs, courtisy N. Pareek
 PMD_CONTROL = "FB005C81-02E7-F387-1CAD-8ACD2D8DF0C8"
 PMD_DATA = "FB005C82-02E7-F387-1CAD-8ACD2D8DF0C8"
 ECG_WRITE = bytearray([0x02, 0x00, 0x00, 0x01, 0x82,
@@ -145,10 +156,10 @@ class BluetoothApp(App):
         """
 
         # callback for the individual Polar buttons.
-        self.OUTLET = self.start_stream(name)
+        self.OUTLET = self.start_stream(name, device_address)
         self.busyLabel.text = "Wait... (Upto a minute...)"
         instance.disabled = True
-        threading.Thread(target=self.connect, args=(device_address,)).start()
+        threading.Thread(target=self.connect, args=(device_address)).start()
 
     def connect(self, address):
         """
@@ -203,12 +214,12 @@ class BluetoothApp(App):
         self.loop.stop()
         App.get_running_app().stop()
 
-    def start_stream(self, stream_name):
+    def start_stream(self, stream_name, address):
         """
         Starts an LSL stream.
         """
         info = StreamInfo(stream_name, 'ECG', 1,
-                          ECG_SAMPLING_FREQ, 'float32', 'myuid2424')
+                          ECG_SAMPLING_FREQ, 'float32', address)
         info.desc().append_child_value("manufacturer", "Polar")
         channels = info.desc().append_child("channels")
 
