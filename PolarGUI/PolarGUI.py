@@ -133,7 +133,7 @@ class BluetoothApp(App):
         self.busyvalue = (self.busyvalue + 1) % 4
         self.busyLabel.text = self.busychars[self.busyvalue]	
         
-        self.busy_label_animation = Animation(color=(0, 0, .4, 1), duration=0.5) + Animation(color=(0, 0, 0, 1), duration=0.5)
+        self.busy_label_animation = Animation(color=(0, 0, 1, 1), duration=0.5) + Animation(color=(1, 1, 1, 1), duration=0.5)
         self.busy_label_animation.start(self.busyLabel)
 
         
