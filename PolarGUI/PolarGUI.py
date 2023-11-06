@@ -11,11 +11,19 @@ https://github.com/markspan/PolarBand2lsl/
 """
 
 logging = False
-if logging:
+
+import sys
+
+if not logging:
+    if sys.platform=="win32":
+        import ctypes
+        ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
     import os
     os.environ["KIVY_NO_CONSOLELOG"] = "1"
     os.environ["BLEAK_LOGGING"] = "0"
 
+
+import pyi_splash
 from pylsl import StreamInfo, StreamOutlet
 from kivy.app import App
 from kivy.core.window import Window
@@ -30,7 +38,6 @@ import logging
 import asyncio
 import threading
 import bleak
-import sys
 
 # UUIDs, courtesy N. Pareek
 PMD_CONTROL = "FB005C81-02E7-F387-1CAD-8ACD2D8DF0C8"
@@ -44,22 +51,25 @@ ECG_SAMPLING_FREQ = 130
 bleak_logger = logging.getLogger("bleak")
 bleak_logger.setLevel(10000)
 
+
+
+# Close the splash screen. It does not matter when the call
+# to this function is made, the splash screen remains open until
+# this function is called or the Python program is terminated.
+
 class BluetoothApp(App):
     """
     Kivy application for Bluetooth communication with Polar H10 device.
     """
     # Build the GUI
+    pyi_splash.close()
     busychars = ["o...", ".o..", "..o.", "...o"]
     def build(self):
         """
         Build the Kivy GUI.
         """
-        if logging:
-            if sys.platform=="win32":
-                import ctypes
-                ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
             
-        Window.size = (400, 200)
+        Window.size = (400, 300)
 
         self.stop_event = asyncio.Event()
         self.busy_label_animation = None
@@ -86,7 +96,7 @@ class BluetoothApp(App):
         Callback for the device scanner: cleans the interface and starts scanning.
         """
         self.scan_button.disabled = True
-        self.devices_layout.clear_widgets()
+        #self.devices_layout.clear_widgets()
         threading.Thread(target=self.scan).start()
 
     def scan(self):
