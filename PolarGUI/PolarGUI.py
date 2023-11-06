@@ -10,9 +10,11 @@ Author: m.m.span@rug.nl
 https://github.com/markspan/PolarBand2lsl/
 """
 
-import os
-os.environ["KIVY_NO_CONSOLELOG"] = "1"
-os.environ["BLEAK_LOGGING"] = "0"
+logging = False
+if logging:
+    import os
+    os.environ["KIVY_NO_CONSOLELOG"] = "1"
+    os.environ["BLEAK_LOGGING"] = "0"
 
 from pylsl import StreamInfo, StreamOutlet
 from kivy.app import App
@@ -52,10 +54,10 @@ class BluetoothApp(App):
         """
         Build the Kivy GUI.
         """
-
-        if sys.platform=="win32":
-            import ctypes
-            ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
+        if logging:
+            if sys.platform=="win32":
+                import ctypes
+                ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 )
             
         Window.size = (400, 200)
 
@@ -145,7 +147,7 @@ class BluetoothApp(App):
         self.busyvalue = (self.busyvalue + 1) % 4
         self.busyLabel.text = self.busychars[self.busyvalue]	
         
-        self.busy_label_animation = Animation(color=(0, 0, 1, 1), duration=0.5) + Animation(color=(1, 1, 1, 1), duration=0.5)
+        self.busy_label_animation = Animation(color=(0, 0, 1, 1), duration=0.25) + Animation(color=(1, 1, 1, 1), duration=0.25)
         self.busy_label_animation.start(self.busyLabel)
 
         
@@ -160,7 +162,7 @@ class BluetoothApp(App):
         self.OUTLET = self.start_stream(name, device_address)
         self.busyLabel.text = "Wait... (Upto a minute...)"
         instance.disabled = True
-        threading.Thread(target=self.connect, args=(device_address)).start()
+        threading.Thread(target=self.connect, args=(device_address,)).start()
 
     def connect(self, address):
         """
@@ -212,6 +214,7 @@ class BluetoothApp(App):
         Stops the scanningdata aquisition and the application.
         """
         self.stop_event.set()
+        asyncio.sleep(5)
         self.loop.stop()
         App.get_running_app().stop()
 
