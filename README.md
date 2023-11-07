@@ -1,6 +1,8 @@
 # PolarBand2lsl
 Send PolarBand H10 Data to an [LSL](https://github.com/sccn/labstreaminglayer) stream.
 
+use PolaGUI (.exe or .Py), or:
+
 # Manual:
 Install [Python](https://www.anaconda.com/) if you haven't yet
 
